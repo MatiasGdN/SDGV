@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Catálogos e Inventario - Sistema de Ventas</title>
+    <!-- ESTILOS (CSS3) -->
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; color: #333; padding: 25px; }
+
+        .container { max-width: 1250px; margin: 0 auto; }
+        
+        /* Encabezado */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        h1 { color: #1a252f; font-size: 26px; }
+        .btn-volver { background: #6c757d; color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; }
+        .btn-volver:hover { background: #5a6268; }
+
+        /* Layout Grid */
+        .layout { display: grid; grid-template-columns: 400px 1fr; gap: 20px; }
+        @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+        /* Tarjetas */
+        .card { background: #ffffff; padding: 22px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card h2 { font-size: 18px; color: #2c3e50; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #eef2f5; padding-bottom: 8px; flex-wrap: wrap; gap: 10px; }
+
+        /* Buscador */
+        .search-box {
+            padding: 7px 12px; border: 1px solid #cccccc; border-radius: 6px; font-size: 13px; outline: none; width: 220px; transition: border-color 0.2s;
+        }
+        .search-box:focus { border-color: #3498db; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15); }
+
+        /* Formularios */
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #555; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 8px 11px; border: 1px solid #cccccc; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: #3498db; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        /* Botones */
+        .btn-primary {
+            width: 100%; background-color: #27ae60; color: white; border: none; padding: 10px; border-radius: 6px;
+            font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 5px;
+        }
+        .btn-primary:hover { background-color: #219653; }
+        
+        .btn-secondary {
+            width: 100%; background-color: #3498db; color: white; border: none; padding: 8px; border-radius: 6px;
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 5px;
+        }
+        .btn-secondary:hover { background-color: #2980b9; }
+
+        .btn-cancel {
+            width: 100%; background-color: #7f8c8d; color: white; border: none; padding: 8px; border-radius: 6px;
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 6px; display: none;
+        }
+        .btn-cancel:hover { background-color: #6c757d; }
+
+        /* Acciones de tabla */
+        .btn-action { border: none; padding: 4px 7px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 2px; }
+        .btn-edit { background-color: #f39c12; color: white; }
+        .btn-edit:hover { background-color: #d68910; }
+        .btn-delete { background-color: #e74c3c; color: white; }
+        .btn-delete:hover { background-color: #c0392b; }
+
+        /* Avisos */
+        .alert { padding: 12px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 20px; display: none; font-weight: 500; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        /* Tabla */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 13px; }
+        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #edf2f7; }
+        th { background-color: #f8fafc; color: #4a5568; font-weight: 600; }
+        tr:hover { background-color: #f8fafc; }
+
+        /* Badges / Etiquetas de Stock */
+        .badge { display: inline-block; padding: 3px 7px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .badge-code { background-color: #edf2f7; color: #2d3748; font-family: monospace; font-size: 12px; }
+        .badge-stock-ok { background-color: #d4edda; color: #155724; }
+        .badge-stock-low { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- ENCABEZADO -->
+        <header>
+            <h1>Gestión de Catálogos e Inventario</h1>
+            <a href="index.html" class="btn-volver">← Ir al Panel de Pruebas</a>
+        </header>
+
+        <!-- ALERTA DE NOTIFICACIÓN -->
+        <div id="alert-msg" class="alert"></div>
+
+        <div class="layout">
+            <!-- COLUMNA IZQUIERDA: FORMULARIOS -->
+            <div>
+                <!-- FORMULARIO 1: CREAR CATEGORÍA -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>1. Nueva Categoría</h2>
+                    </div>
+                    <form id="form-categoria">
+                        <div class="form-group">
+                            <label for="cat_nombre">Nombre de Categoría *</label>
+                            <input type="text" id="cat_nombre" placeholder="Ej: Electrónica" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cat_descripcion">Descripción</label>
+                            <input type="text" id="cat_descripcion" placeholder="Opcional">
+                        </div>
+                        <button type="submit" class="btn-secondary">Guardar Categoría</button>
+                    </form>
+                </div>
+
+                <!-- FORMULARIO 2: CREAR PROVEEDOR -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>2. Nuevo Proveedor</h2>
+                    </div>
+                    <form id="form-proveedor">
+                        <div class="form-group">
+                            <label for="prov_razon_social">Nombre / Razón Social *</label>
+                            <input type="text" id="prov_razon_social" placeholder="Ej: Distribuidora S.A." required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="prov_cuit">CUIT</label>
+                                <input type="text" id="prov_cuit" placeholder="30-11223344-5">
+                            </div>
+                            <div class="form-group">
+                                <label for="prov_telefono">Teléfono</label>
+                                <input type="text" id="prov_telefono" placeholder="3764000000">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-secondary">Guardar Proveedor</button>
+                    </form>
+                </div>
+
+                <!-- FORMULARIO 3: CARGAR / MODIFICAR PRODUCTO -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 id="prod-form-titulo">3. Cargar Producto</h2>
+                    </div>
+                    <form id="form-producto">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="id_categoria">Categoría *</label>
+                                <select id="id_categoria" required>
+                                    <option value="">Cargando...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_proveedor">Proveedor</label>
+                                <select id="id_proveedor">
+                                    <option value="">-- Opcional --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="codigo">Código / SKU *</label>
+                                <input type="text" id="codigo" placeholder="PROD001" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="nombre">Nombre *</label>
+                                <input type="text" id="nombre" placeholder="Notebook 15''" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="precio_compra">Precio Compra ($) *</label>
+                                <input type="number" step="0.01" id="precio_compra" placeholder="1000.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="precio_venta">Precio Venta ($) *</label>
+                                <input type="number" step="0.01" id="precio_venta" placeholder="1500.00" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="stock">Stock Inicial *</label>
+                                <input type="number" id="stock" placeholder="10" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="stock_minimo">Stock Mínimo *</label>
+                                <input type="number" id="stock_minimo" placeholder="2" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btn-prod-submit" class="btn-primary">Guardar Producto</button>
+                        <button type="button" id="btn-prod-cancelar" class="btn-cancel" onclick="cancelarEdicionProducto()">Cancelar Edición</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: TABLA DE PRODUCTOS Y BUSCADOR -->
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Inventario de Productos</h2>
+                        <input type="text" id="input-busqueda" class="search-box" placeholder="🔍 Buscar producto..." oninput="filtrarProductos()">
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Producto</th>
+                                    <th>Categoría / Prov.</th>
+                                    <th>P. Compra</th>
+                                    <th>P. Venta</th>
+                                    <th>Stock</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-productos-body">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; color: #888;">Cargando productos desde la API...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LÓGICA JAVASCRIPT -->
+    <script>
+        const API_PRODUCTOS = "http://127.0.0.1:5000/api/productos";
+        const API_CATEGORIAS = "http://127.0.0.1:5000/api/categorias";
+        const API_PROVEEDORES = "http://127.0.0.1:5000/api/proveedores";
+
+        let productosGlobales = [];
+        let idProductoEditando = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            cargarCategorias();
+            cargarProveedores();
+            cargarProductos();
+        });
+
+        // 1. Guardar Categoría (POST)
+        document.getElementById("form-categoria").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const nuevaCat = {
+                nombre: document.getElementById("cat_nombre").value.trim(),
+                descripcion: document.getElementById("cat_descripcion").value.trim() || null
+            };
+
+            try {
+                const res = await fetch(API_CATEGORIAS, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(nuevaCat)
+                });
+                const datos = await res.json();
+
+                if (res.ok) {
+                    mostrarAlerta(`Categoría '${datos.nombre}' creada con éxito.`, "exito");
+                    document.getElementById("form-categoria").reset();
+                    cargarCategorias();
+                } else {
+                    mostrarAlerta(datos.error || "Error al crear categoría.", "error");
+                }
+            } catch (err) {
+                mostrarAlerta("Error al conectar con la API de categorías.", "error");
+            }
+        });
+
+        // 2. Guardar Proveedor (POST)
+        document.getElementById("form-proveedor").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const nuevoProv = {
+                nombre: document.getElementById("prov_razon_social").value.trim(),
+                cuit: document.getElementById("prov_cuit").value.trim() || null,
+                telefono: document.getElementById("prov_telefono").value.trim() || null
+            };
+
+            try {
+                const res = await fetch(API_PROVEEDORES, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(nuevoProv)
+                });
+                const datos = await res.json();
+
+                if (res.ok) {
+                    mostrarAlerta(`Proveedor '${datos.razon_social}' creado con éxito.`, "exito");
+                    document.getElementById("form-proveedor").reset();
+                    cargarProveedores();
+                } else {
+                    mostrarAlerta(datos.error || "Error al crear proveedor.", "error");
+                }
+            } catch (err) {
+                mostrarAlerta("Error al conectar con la API de proveedores.", "error");
+            }
+        });
+
+        // 3. Guardar / Actualizar Producto (POST / PUT)
+        document.getElementById("form-producto").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const idProvVal = document.getElementById("id_proveedor").value;
+
+            const datosProd = {
+                id_categoria: parseInt(document.getElementById("id_categoria").value),
+                id_proveedor: idProvVal ? parseInt(idProvVal) : null,
+                codigo: document.getElementById("codigo").value.trim(),
+                nombre: document.getElementById("nombre").value.trim(),
+                precio_compra: parseFloat(document.getElementById("precio_compra").value),
+                precio_venta: parseFloat(document.getElementById("precio_venta").value),
+                stock: parseInt(document.getElementById("stock").value),
+                stock_minimo: parseInt(document.getElementById("stock_minimo").value)
+            };
+
+            const url = idProductoEditando ? `${API_PRODUCTOS}/${idProductoEditando}` : API_PRODUCTOS;
+            const metodo = idProductoEditando ? "PUT" : "POST";
+
+            try {
+                const res = await fetch(url, {
+                    method: metodo,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datosProd)
+                });
+                const datos = await res.json();
+
+                if (res.ok) {
+                    mostrarAlerta(
+                        idProductoEditando ? "Producto actualizado correctamente." : `Producto '${datos.nombre}' guardado en inventario.`, 
+                        "exito"
+                    );
+                    cancelarEdicionProducto();
+                    cargarProductos();
+                } else {
+                    mostrarAlerta(datos.error || "Error al procesar el producto.", "error");
+                }
+            } catch (err) {
+                mostrarAlerta("Error de comunicación con la API de productos.", "error");
+            }
+        });
+
+        // Cargar Selector de Categorías (GET)
+        async function cargarCategorias() {
+            const select = document.getElementById("id_categoria");
+            try {
+                const res = await fetch(API_CATEGORIAS);
+                const categorias = await res.json();
+
+                if (!categorias || categorias.length === 0) {
+                    select.innerHTML = `<option value="">-- Crea primero una categoría --</option>`;
+                    return;
+                }
+
+                select.innerHTML = `<option value="">-- Seleccionar Categoría --</option>`;
+                categorias.forEach(c => {
+                    select.innerHTML += `<option value="${c.id_categoria}">${c.nombre}</option>`;
+                });
+            } catch (err) {
+                select.innerHTML = `<option value="">Error al cargar categorías</option>`;
+            }
+        }
+
+        // Cargar Selector de Proveedores (GET)
+        async function cargarProveedores() {
+            const select = document.getElementById("id_proveedor");
+            try {
+                const res = await fetch(API_PROVEEDORES);
+                const proveedores = await res.json();
+
+                select.innerHTML = `<option value="">-- Sin Proveedor --</option>`;
+                if (proveedores && proveedores.length > 0) {
+                    proveedores.forEach(p => {
+                        select.innerHTML += `<option value="${p.id_proveedor}">${p.razon_social}</option>`;
+                    });
+                }
+            } catch (err) {
+                select.innerHTML = `<option value="">Error al cargar proveedores</option>`;
+            }
+        }
+
+        // Cargar Lista de Productos (GET)
+        async function cargarProductos() {
+            try {
+                const res = await fetch(API_PRODUCTOS);
+                productosGlobales = await res.json();
+
+                document.getElementById("input-busqueda").value = "";
+                renderizarTablaProductos(productosGlobales);
+
+            } catch (err) {
+                const tbody = document.getElementById("tabla-productos-body");
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: red;">Error al obtener inventario desde la API.</td></tr>`;
+            }
+        }
+
+        // Renderizar tabla de productos
+        function renderizarTablaProductos(lista) {
+            const tbody = document.getElementById("tabla-productos-body");
+
+            if (!lista || lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No hay productos en inventario.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            lista.forEach(p => {
+                const esStockBajo = p.stock <= p.stock_minimo;
+                const badgeStock = esStockBajo
+                    ? `<span class="badge badge-stock-low">${p.stock} (Bajo)</span>`
+                    : `<span class="badge badge-stock-ok">${p.stock}</span>`;
+
+                const provNombre = p.proveedor ? `<br><small style="color:#777;">Prov: ${p.proveedor}</small>` : '';
+
+                const fila = document.createElement("tr");
+                fila.innerHTML = `
+                    <td><span class="badge badge-code">${p.codigo}</span></td>
+                    <td><strong>${p.nombre}</strong></td>
+                    <td><small>${p.categoria || 'Sin cat.'}</small>${provNombre}</td>
+                    <td>$ ${parseFloat(p.precio_compra).toLocaleString('es-AR')}</td>
+                    <td><strong>$ ${parseFloat(p.precio_venta).toLocaleString('es-AR')}</strong></td>
+                    <td>${badgeStock}</td>
+                    <td>
+                        <button class="btn-action btn-edit" title="Editar" onclick="prepararEdicionProducto(${p.id_producto})">✏️</button>
+                        <button class="btn-action btn-delete" title="Desactivar" onclick="eliminarProducto(${p.id_producto})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(fila);
+            });
+        }
+
+        // Buscador Filtro en Tiempo Real
+        function filtrarProductos() {
+            const consulta = document.getElementById("input-busqueda").value.toLowerCase().trim();
+
+            const resultado = productosGlobales.filter(p => {
+                const codigo = (p.codigo || '').toLowerCase();
+                const nombre = (p.nombre || '').toLowerCase();
+                const categoria = (p.categoria || '').toLowerCase();
+                const proveedor = (p.proveedor || '').toLowerCase();
+
+                return codigo.includes(consulta) ||
+                       nombre.includes(consulta) ||
+                       categoria.includes(consulta) ||
+                       proveedor.includes(consulta);
+            });
+
+            renderizarTablaProductos(resultado);
+        }
+
+        // Preparar Edición de Producto
+        function prepararEdicionProducto(id) {
+            const prod = productosGlobales.find(p => p.id_producto === id);
+            if (!prod) return;
+
+            idProductoEditando = id;
+
+            document.getElementById("prod-form-titulo").innerText = `Modificar Producto (#${id})`;
+            document.getElementById("id_categoria").value = prod.id_categoria || '';
+            document.getElementById("id_proveedor").value = prod.id_proveedor || '';
+            document.getElementById("codigo").value = prod.codigo || '';
+            document.getElementById("nombre").value = prod.nombre || '';
+            document.getElementById("precio_compra").value = prod.precio_compra || '';
+            document.getElementById("precio_venta").value = prod.precio_venta || '';
+            document.getElementById("stock").value = prod.stock !== undefined ? prod.stock : '';
+            document.getElementById("stock_minimo").value = prod.stock_minimo !== undefined ? prod.stock_minimo : '';
+
+            const btnSubmit = document.getElementById("btn-prod-submit");
+            btnSubmit.innerText = "Actualizar Producto";
+            btnSubmit.style.backgroundColor = "#f39c12";
+
+            document.getElementById("btn-prod-cancelar").style.display = "block";
+        }
+
+        // Cancelar Edición de Producto
+        function cancelarEdicionProducto() {
+            idProductoEditando = null;
+            document.getElementById("form-producto").reset();
+
+            document.getElementById("prod-form-titulo").innerText = "3. Cargar Producto";
+
+            const btnSubmit = document.getElementById("btn-prod-submit");
+            btnSubmit.innerText = "Guardar Producto";
+            btnSubmit.style.backgroundColor = "#27ae60";
+
+            document.getElementById("btn-prod-cancelar").style.display = "none";
+        }
+
+        // Desactivar / Eliminar Producto (DELETE)
+        async function eliminarProducto(id) {
+            if (!confirm(`¿Estás seguro de desactivar el producto #${id}?`)) return;
+
+            try {
+                const res = await fetch(`${API_PRODUCTOS}/${id}`, { method: "DELETE" });
+                const datos = await res.json();
+
+                if (res.ok) {
+                    mostrarAlerta("Producto desactivado correctamente.", "exito");
+                    cargarProductos();
+                } else {
+                    mostrarAlerta(datos.error || "No se pudo desactivar el producto.", "error");
+                }
+            } catch (err) {
+                mostrarAlerta("Error al conectar con la API.", "error");
+            }
+        }
+
+        // Mostrar Alertas
+        function mostrarAlerta(mensaje, tipo) {
+            const alertDiv = document.getElementById("alert-msg");
+            alertDiv.innerText = mensaje;
+            alertDiv.className = "alert " + (tipo === "exito" ? "alert-success" : "alert-error");
+            alertDiv.style.display = "block";
+
+            setTimeout(() => { alertDiv.style.display = "none"; }, 4000);
+        }
+    </script>
+</body>
+</html>
+

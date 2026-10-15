@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes - Sistema de Ventas</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; color: #333; padding: 25px; }
+
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        h1 { color: #1a252f; font-size: 26px; }
+        .btn-volver { background: #6c757d; color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; }
+        .btn-volver:hover { background: #5a6268; }
+
+        .layout { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+        @media (max-width: 850px) { .layout { grid-template-columns: 1fr; } }
+
+        .card { background: #ffffff; padding: 22px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .card h2 { font-size: 18px; color: #2c3e50; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 2px solid #eef2f5; padding-bottom: 8px; flex-wrap: wrap; gap: 10px; }
+
+        .search-box {
+            padding: 7px 12px; border: 1px solid #cccccc; border-radius: 6px; font-size: 13px; outline: none; width: 220px;
+        }
+        .search-box:focus { border-color: #3498db; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #555; }
+        .form-group input {
+            width: 100%; padding: 9px 12px; border: 1px solid #cccccc; border-radius: 6px; font-size: 14px; outline: none;
+        }
+        .form-group input:focus { border-color: #3498db; }
+
+        .btn-primary {
+            width: 100%; background-color: #27ae60; color: white; border: none; padding: 11px; border-radius: 6px;
+            font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 5px;
+        }
+        .btn-primary:hover { background-color: #219653; }
+
+        .btn-cancel {
+            width: 100%; background-color: #7f8c8d; color: white; border: none; padding: 9px; border-radius: 6px;
+            font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; display: none;
+        }
+
+        .btn-action { border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 13px; margin-right: 3px; }
+        .btn-edit { background-color: #f39c12; color: white; }
+        .btn-delete { background-color: #e74c3c; color: white; }
+
+        .alert { padding: 12px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 20px; display: none; font-weight: 500; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #edf2f7; }
+        th { background-color: #f8fafc; color: #4a5568; font-weight: 600; }
+        tr:hover { background-color: #f8fafc; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Registro de Clientes</h1>
+            <a href="index.html" class="btn-volver">← Ir al Panel Principal</a>
+        </header>
+
+        <div id="alert-msg" class="alert"></div>
+
+        <div class="layout">
+            <!-- FORMULARIO DE CARGA -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 id="form-titulo">Cargar Nuevo Cliente</h2>
+                </div>
+                <form id="form-cliente">
+                    <div class="form-group">
+                        <label for="nombre">Nombre / Razón Social *</label>
+                        <input type="text" id="nombre" placeholder="Ej: Comercio S.A. / Ana López" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cuit_dni">CUIT / DNI (Opcional)</label>
+                        <input type="text" id="cuit_dni" placeholder="20-30123456-7">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="text" id="telefono" placeholder="3764123456">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Correo Electrónico</label>
+                        <input type="email" id="email" placeholder="cliente@contacto.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="direccion">Dirección</label>
+                        <input type="text" id="direccion" placeholder="Av. Corrientes 1234">
+                    </div>
+
+                    <button type="submit" id="btn-submit" class="btn-primary">Guardar Cliente</button>
+                    <button type="button" id="btn-cancelar" class="btn-cancel" onclick="cancelarEdicion()">Cancelar Edición</button>
+                </form>
+            </div>
+
+            <!-- TABLA DE LISTADO -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Lista de Clientes</h2>
+                    <input type="text" id="input-busqueda" class="search-box" placeholder="🔍 Buscar cliente..." oninput="filtrarClientes()">
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente / Razón Social</th>
+                                <th>CUIT / DNI</th>
+                                <th>Contacto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-clientes-body">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: #888;">Cargando clientes...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:5000/api/clientes";
+        let idClienteEditando = null;
+        let clientesGlobales = [];
+
+        document.addEventListener("DOMContentLoaded", cargarClientes);
+
+        // POST / PUT
+        document.getElementById("form-cliente").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const valCuit = document.getElementById("cuit_dni").value.trim();
+
+            const datosCliente = {
+                nombre: document.getElementById("nombre").value.trim(),
+                cuit: valCuit !== "" ? valCuit : null,
+                telefono: document.getElementById("telefono").value.trim() || null,
+                email: document.getElementById("email").value.trim() || null,
+                direccion: document.getElementById("direccion").value.trim() || null
+            };
+
+            const url = idClienteEditando ? `${API_URL}/${idClienteEditando}` : API_URL;
+            const metodo = idClienteEditando ? "PUT" : "POST";
+
+            try {
+                const respuesta = await fetch(url, {
+                    method: metodo,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datosCliente)
+                });
+
+                const datos = await respuesta.json();
+
+                if (respuesta.ok) {
+                    mostrarAlerta(
+                        idClienteEditando ? "Cliente actualizado correctamente." : "Cliente registrado con éxito.", 
+                        "exito"
+                    );
+                    cancelarEdicion();
+                    cargarClientes();
+                } else {
+                    mostrarAlerta(datos.error || "Ocurrió un error al guardar.", "error");
+                }
+            } catch (error) {
+                mostrarAlerta("Error al conectar con la API de Flask.", "error");
+            }
+        });
+
+        // GET
+        async function cargarClientes() {
+            try {
+                const respuesta = await fetch(API_URL);
+                clientesGlobales = await respuesta.json();
+                document.getElementById("input-busqueda").value = "";
+                renderizarTabla(clientesGlobales);
+            } catch (error) {
+                document.getElementById("tabla-clientes-body").innerHTML = 
+                    `<tr><td colspan="5" style="text-align:center; color: red;">Error al conectar con el servidor.</td></tr>`;
+            }
+        }
+
+        function renderizarTabla(lista) {
+            const tbody = document.getElementById("tabla-clientes-body");
+
+            if (!lista || lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No hay clientes registrados.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            lista.forEach(c => {
+                const fila = document.createElement("tr");
+                fila.innerHTML = `
+                    <td>#${c.id_cliente}</td>
+                    <td><strong>${c.nombre}</strong><br><small style="color:#666;">${c.direccion || ''}</small></td>
+                    <td>${c.cuit || '-'}</td>
+                    <td><small>${c.telefono || '-'}<br>${c.email || '-'}</small></td>
+                    <td>
+                        <button class="btn-action btn-edit" title="Editar" onclick="prepararEdicion(${c.id_cliente})">✏️</button>
+                        <button class="btn-action btn-delete" title="Eliminar" onclick="eliminarCliente(${c.id_cliente})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(fila);
+            });
+        }
+
+        function filtrarClientes() {
+            const q = document.getElementById("input-busqueda").value.toLowerCase().trim();
+            const resultado = clientesGlobales.filter(c => 
+                (c.nombre || '').toLowerCase().includes(q) ||
+                (c.cuit || '').toLowerCase().includes(q) ||
+                (c.telefono || '').toLowerCase().includes(q)
+            );
+            renderizarTabla(resultado);
+        }
+
+        function prepararEdicion(id) {
+            const c = clientesGlobales.find(item => item.id_cliente === id);
+            if (!c) return;
+
+            idClienteEditando = id;
+            document.getElementById("form-titulo").innerText = `Modificar Cliente (#${id})`;
+            document.getElementById("nombre").value = c.nombre || '';
+            document.getElementById("cuit_dni").value = c.cuit || '';
+            document.getElementById("telefono").value = c.telefono || '';
+            document.getElementById("email").value = c.email || '';
+            document.getElementById("direccion").value = c.direccion || '';
+
+            const btnSubmit = document.getElementById("btn-submit");
+            btnSubmit.innerText = "Actualizar Cliente";
+            btnSubmit.style.backgroundColor = "#f39c12";
+
+            document.getElementById("btn-cancelar").style.display = "block";
+        }
+
+        function cancelarEdicion() {
+            idClienteEditando = null;
+            document.getElementById("form-cliente").reset();
+            document.getElementById("form-titulo").innerText = "Cargar Nuevo Cliente";
+
+            const btnSubmit = document.getElementById("btn-submit");
+            btnSubmit.innerText = "Guardar Cliente";
+            btnSubmit.style.backgroundColor = "#27ae60";
+
+            document.getElementById("btn-cancelar").style.display = "none";
+        }
+
+        async function eliminarCliente(id) {
+            if (!confirm(`¿Eliminar el cliente #${id}?`)) return;
+
+            try {
+                const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+                const datos = await res.json();
+
+                if (res.ok) {
+                    mostrarAlerta("Cliente eliminado.", "exito");
+                    cargarClientes();
+                } else {
+                    mostrarAlerta(datos.error || "No se pudo eliminar.", "error");
+                }
+            } catch (error) {
+                mostrarAlerta("Error al conectar con la API.", "error");
+            }
+        }
+
+        function mostrarAlerta(msg, tipo) {
+            const alertDiv = document.getElementById("alert-msg");
+            alertDiv.innerText = msg;
+            alertDiv.className = "alert " + (tipo === "exito" ? "alert-success" : "alert-error");
+            alertDiv.style.display = "block";
+            setTimeout(() => { alertDiv.style.display = "none"; }, 4000);
+        }
+    </script>
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Pruebas - Gestor de Ventas</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f4f9; color: #333; }
+        h1 { color: #2c3e50; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin: 3px 0; }
+        button:hover { background: #2980b9; }
+        pre { background: #eee; padding: 8px; border-radius: 4px; max-height: 140px; overflow-y: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <h1>Panel de Pruebas Completo de la API</h1>
+
+    <div class="grid">
+        <!-- 1. CONEXIÓN -->
+        <div class="card">
+            <h3>1. Estado de la API</h3>
+            <button onclick="probarConexion()">Verificar Conexión</button>
+            <pre id="res-conexion">Esperando...</pre>
+        </div>
+
+        <!-- 2. LOGIN -->
+        <div class="card">
+            <h3>2. Probar Login</h3>
+            <button onclick="probarLogin()">Iniciar Sesión (admin)</button>
+            <pre id="res-login">Esperando...</pre>
+        </div>
+
+        <!-- 3. USUARIOS Y VENDEDORES -->
+        <div class="card">
+            <h3>3. Usuarios y Vendedores</h3>
+            <button onclick="obtenerUsuarios()">Listar Usuarios</button>
+            <button onclick="crearUsuario()">1º Crear Usuario Vendedor</button>
+            <button onclick="crearVendedor()">2º Registrar en Vendedores</button>
+            <pre id="res-usuarios">Esperando...</pre>
+        </div>
+
+        <!-- 4. CLIENTES -->
+        <div class="card">
+            <h3>4. Clientes</h3>
+            <button onclick="obtenerClientes()">Listar Clientes</button>
+            <button onclick="crearCliente()">Crear Cliente Test</button>
+            <pre id="res-clientes">Esperando...</pre>
+        </div>
+
+        <!-- 5. CATEGORÍAS Y PRODUCTOS -->
+        <div class="card">
+            <h3>5. Categorías y Productos</h3>
+            <button onclick="crearCategoria()">1º Crear Categoría</button>
+            <button onclick="crearProducto()">2º Crear Producto</button>
+            <button onclick="obtenerProductos()">Listar Productos</button>
+            <pre id="res-productos">Esperando...</pre>
+        </div>
+
+        <!-- 6. VENTAS -->
+        <div class="card">
+            <h3>6. Ventas</h3>
+            <button onclick="registrarVenta()">Procesar Venta Test</button>
+            <button onclick="obtenerVentas()">Listar Ventas</button>
+            <pre id="res-ventas">Esperando...</pre>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:5000";
+
+        async function ejecutarFetch(url, metodo = "GET", body = null) {
+            const opciones = { method: metodo, headers: { "Content-Type": "application/json" } };
+            if (body) opciones.body = JSON.stringify(body);
+            
+            try {
+                const res = await fetch(API_URL + url, opciones);
+                const datos = await res.json();
+                return JSON.stringify(datos, null, 2);
+            } catch (err) {
+                return "Error: " + err;
+            }
+        }
+
+        async function probarConexion() {
+            document.getElementById("res-conexion").innerText = await ejecutarFetch("/");
+        }
+
+        async function probarLogin() {
+            const credenciales = { nombre_usuario: "admin", clave: "admin123" };
+            document.getElementById("res-login").innerText = await ejecutarFetch("/api/login", "POST", credenciales);
+        }
+
+        async function obtenerUsuarios() {
+            document.getElementById("res-usuarios").innerText = await ejecutarFetch("/api/usuarios");
+        }
+
+        async function crearUsuario() {
+            const nuevo = {
+                nombre_usuario: "vendedor1", nombre: "Carlos", apellido: "Gómez",
+                rol: "Vendedor", clave_plana: "123456", telefono: "3764000000", email: "carlos@email.com"
+            };
+            document.getElementById("res-usuarios").innerText = await ejecutarFetch("/api/usuarios", "POST", nuevo);
+        }
+
+        async function crearVendedor() {
+            const vendedor = { id_usuario: 2, zona: "Centro", porcentaje_comision: 5.0 };
+            document.getElementById("res-usuarios").innerText = await ejecutarFetch("/api/vendedores", "POST", vendedor);
+        }
+
+        async function obtenerClientes() {
+            document.getElementById("res-clientes").innerText = await ejecutarFetch("/api/clientes");
+        }
+
+        async function crearCliente() {
+            const cliente = { nombre: "Juan", apellido: "Pérez", cuit: "20300000008", email: "juan@email.com" };
+            document.getElementById("res-clientes").innerText = await ejecutarFetch("/api/clientes", "POST", cliente);
+        }
+
+        async function crearCategoria() {
+            const cat = { nombre: "Tecnología", descripcion: "Artículos electrónicos" };
+            document.getElementById("res-productos").innerText = await ejecutarFetch("/api/categorias", "POST", cat);
+        }
+
+        async function crearProducto() {
+            const prod = {
+                id_categoria: 1, codigo: "PROD001", nombre: "Notebook Lenovo",
+                precio_compra: 500000, precio_venta: 750000, stock: 10, stock_minimo: 2
+            };
+            document.getElementById("res-productos").innerText = await ejecutarFetch("/api/productos", "POST", prod);
+        }
+
+        async function obtenerProductos() {
+            document.getElementById("res-productos").innerText = await ejecutarFetch("/api/productos");
+        }
+
+        async function registrarVenta() {
+            const venta = {
+                id_cliente: 1,
+                id_vendedor: 1,
+                observaciones: "Venta de prueba con descuento de stock automático",
+                detalles: [{ id_producto: 1, cantidad: 1, precio_unitario: 750000 }]
+            };
+            document.getElementById("res-ventas").innerText = await ejecutarFetch("/api/ventas", "POST", venta);
+        }
+
+        async function obtenerVentas() {
+            document.getElementById("res-ventas").innerText = await ejecutarFetch("/api/ventas");
+        }
+    </script>
+</body>
+</html>
+
+

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punto de Venta - Sistema de Ventas</title>
+    <!-- ESTILOS (CSS3) -->
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; color: #333; padding: 25px; }
+
+        .container { max-width: 1250px; margin: 0 auto; }
+        
+        /* Encabezado */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { color: #1a252f; font-size: 26px; }
+        .btn-volver { background: #6c757d; color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; }
+        .btn-volver:hover { background: #5a6268; }
+
+        /* Grid Principal */
+        .pos-grid { display: grid; grid-template-columns: 1fr 420px; gap: 20px; }
+        @media (max-width: 950px) { .pos-grid { grid-template-columns: 1fr; } }
+
+        /* Tarjetas */
+        .card { background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card h2 { font-size: 18px; color: #2c3e50; margin-bottom: 15px; border-bottom: 2px solid #eef2f5; padding-bottom: 8px; }
+
+        /* Buscador y Tabla */
+        .search-box {
+            width: 100%; padding: 10px 14px; border: 1px solid #cccccc; border-radius: 6px; font-size: 14px; outline: none; margin-bottom: 15px;
+        }
+        .search-box:focus { border-color: #3498db; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15); }
+
+        .table-responsive { overflow-x: auto; max-height: 400px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #edf2f7; }
+        th { background-color: #f8fafc; color: #4a5568; font-weight: 600; position: sticky; top: 0; z-index: 1; }
+        tr:hover { background-color: #f8fafc; }
+
+        /* Formularios y Selects */
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #555; }
+        .form-group select, .form-group textarea {
+            width: 100%; padding: 9px 12px; border: 1px solid #cccccc; border-radius: 6px; font-size: 14px; outline: none;
+        }
+
+        /* Botones */
+        .btn-add { background-color: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn-add:hover { background-color: #2980b9; }
+        .btn-remove { background-color: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .btn-remove:hover { background-color: #c0392b; }
+        
+        .btn-confirmar {
+            width: 100%; background-color: #27ae60; color: white; border: none; padding: 14px; border-radius: 6px;
+            font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px;
+        }
+        .btn-confirmar:hover { background-color: #219653; }
+
+        /* Resumen de Carrito */
+        .carrito-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .carrito-item-info { flex: 1; }
+        .carrito-item-cant { width: 60px; padding: 4px; text-align: center; margin: 0 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .total-box { background: #2c3e50; color: white; padding: 15px; border-radius: 6px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .total-box span { font-size: 22px; font-weight: bold; }
+
+        /* Avisos */
+        .alert { padding: 12px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 20px; display: none; font-weight: 500; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        .badge-stock { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; background: #e2e8f0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Punto de Venta (Facturación)</h1>
+            <a href="index.html" class="btn-volver">← Ir al Panel de Pruebas</a>
+        </header>
+
+        <div id="alert-msg" class="alert"></div>
+
+        <div class="pos-grid">
+            <!-- COLUMNA IZQUIERDA: CATÁLOGO DE PRODUCTOS -->
+            <div class="card">
+                <h2>1. Seleccionar Productos</h2>
+                <input type="text" id="input-busqueda" class="search-box" placeholder="🔍 Buscar por código o nombre..." oninput="filtrarProductos()">
+                
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Producto</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-productos-body">
+                            <tr><td colspan="5" style="text-align: center; color: #888;">Cargando catálogo...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: DATOS DE VENTA Y CARRITO -->
+            <div>
+                <div class="card">
+                    <h2>2. Datos del Comprobante</h2>
+                    
+                    <div class="form-group">
+                        <label for="select-cliente">Cliente *</label>
+                        <select id="select-cliente">
+                            <option value="">Cargando clientes...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="select-vendedor">Vendedor *</label>
+                        <select id="select-vendedor">
+                            <option value="">Cargando vendedores...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>3. Detalle de la Venta</h2>
+                    <div id="carrito-lista">
+                        <p style="color: #888; font-size: 13px; text-align: center;">No hay productos agregados.</p>
+                    </div>
+
+                    <div class="total-box">
+                        <div>Total a Pagar:</div>
+                        <span id="total-monto">$ 0,00</span>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <textarea id="observaciones" rows="2" placeholder="Observaciones de la venta (Opcional)"></textarea>
+                    </div>
+
+                    <button class="btn-confirmar" onclick="procesarVenta()">Registrar y Procesar Venta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LÓGICA EN JAVASCRIPT -->
+    <script>
+        const API_BASE = "http://127.0.0.1:5000/api";
+        
+        let productosGlobales = [];
+        let carrito = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            cargarClientes();
+            cargarVendedores();
+            cargarProductos();
+        });
+
+        // 1. Cargar Todos los Clientes (Sin filtrado de activo)
+        async function cargarClientes() {
+            const select = document.getElementById("select-cliente");
+            try {
+                const res = await fetch(`${API_BASE}/clientes`);
+                const clientes = await res.json();
+
+                if (!clientes || clientes.length === 0) {
+                    select.innerHTML = `<option value="">-- No hay clientes registrados --</option>`;
+                    return;
+                }
+
+                select.innerHTML = `<option value="">-- Seleccionar Cliente --</option>`;
+                clientes.forEach(c => {
+                    const nombreMostrar = c.nombre + (c.apellido ? ` ${c.apellido}` : '');
+                    select.innerHTML += `<option value="${c.id_cliente}">${nombreMostrar} (#${c.id_cliente})</option>`;
+                });
+            } catch (err) {
+                select.innerHTML = `<option value="">Error al cargar clientes</option>`;
+            }
+        }
+
+        // 2. Cargar Todos los Vendedores (Sin filtrado de activo)
+        async function cargarVendedores() {
+            const select = document.getElementById("select-vendedor");
+            try {
+                const res = await fetch(`${API_BASE}/vendedores`);
+                const vendedores = await res.json();
+
+                if (!vendedores || vendedores.length === 0) {
+                    select.innerHTML = `<option value="">-- No hay vendedores registrados --</option>`;
+                    return;
+                }
+
+                select.innerHTML = `<option value="">-- Seleccionar Vendedor --</option>`;
+                vendedores.forEach(v => {
+                    select.innerHTML += `<option value="${v.id_vendedor}">${v.nombre_completo} - Zona: ${v.zona}</option>`;
+                });
+            } catch (err) {
+                select.innerHTML = `<option value="">Error al cargar vendedores</option>`;
+            }
+        }
+
+        // 3. Cargar Productos
+        async function cargarProductos() {
+            try {
+                const res = await fetch(`${API_BASE}/productos`);
+                productosGlobales = await res.json();
+                renderizarTablaProductos(productosGlobales);
+            } catch (err) {
+                document.getElementById("tabla-productos-body").innerHTML = 
+                    `<tr><td colspan="5" style="text-align:center; color:red;">Error al conectar con la API.</td></tr>`;
+            }
+        }
+
+        function renderizarTablaProductos(lista) {
+            const tbody = document.getElementById("tabla-productos-body");
+            if (!lista || lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No hay productos disponibles.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            lista.forEach(p => {
+                const fila = document.createElement("tr");
+                fila.innerHTML = `
+                    <td><code>${p.codigo}</code></td>
+                    <td><strong>${p.nombre}</strong></td>
+                    <td>$ ${parseFloat(p.precio_venta).toLocaleString('es-AR')}</td>
+                    <td><span class="badge-stock">${p.stock} u.</span></td>
+                    <td>
+                        <button class="btn-add" onclick="agregarAlCarrito(${p.id_producto})" ${p.stock <= 0 ? 'disabled style="opacity:0.5"' : ''}>
+                            + Agregar
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(fila);
+            });
+        }
+
+        function filtrarProductos() {
+            const q = document.getElementById("input-busqueda").value.toLowerCase().trim();
+            const resultado = productosGlobales.filter(p => 
+                (p.codigo || '').toLowerCase().includes(q) || 
+                (p.nombre || '').toLowerCase().includes(q)
+            );
+            renderizarTablaProductos(resultado);
+        }
+
+        // 4. Lógica del Carrito
+        function agregarAlCarrito(id) {
+            const prod = productosGlobales.find(p => p.id_producto === id);
+            if (!prod) return;
+
+            const existente = carrito.find(item => item.id_producto === id);
+
+            if (existente) {
+                if (existente.cantidad < prod.stock) {
+                    existente.cantidad++;
+                } else {
+                    mostrarAlerta(`Stock máximo alcanzado (${prod.stock}) para ${prod.nombre}`, "error");
+                }
+            } else {
+                carrito.push({
+                    id_producto: prod.id_producto,
+                    nombre: prod.nombre,
+                    precio_unitario: parseFloat(prod.precio_venta),
+                    cantidad: 1,
+                    stock_max: prod.stock
+                });
+            }
+            actualizarCarritoUI();
+        }
+
+        function cambiarCantidad(id, nuevaCant) {
+            const item = carrito.find(i => i.id_producto === id);
+            if (!item) return;
+
+            const cantidadNum = parseInt(nuevaCant);
+            if (isNaN(cantidadNum) || cantidadNum <= 0) {
+                quitarDelCarrito(id);
+                return;
+            }
+
+            if (cantidadNum > item.stock_max) {
+                mostrarAlerta(`Stock insuficiente. Máximo disponible: ${item.stock_max}`, "error");
+                item.cantidad = item.stock_max;
+            } else {
+                item.cantidad = cantidadNum;
+            }
+            actualizarCarritoUI();
+        }
+
+        function quitarDelCarrito(id) {
+            carrito = carrito.filter(i => i.id_producto !== id);
+            actualizarCarritoUI();
+        }
+
+        function actualizarCarritoUI() {
+            const contenedor = document.getElementById("carrito-lista");
+            if (carrito.length === 0) {
+                contenedor.innerHTML = `<p style="color: #888; font-size: 13px; text-align: center;">No hay productos agregados.</p>`;
+                document.getElementById("total-monto").innerText = "$ 0,00";
+                return;
+            }
+
+            contenedor.innerHTML = "";
+            let total = 0;
+
+            carrito.forEach(item => {
+                const subtotal = item.cantidad * item.precio_unitario;
+                total += subtotal;
+
+                const div = document.createElement("div");
+                div.className = "carrito-item";
+                div.innerHTML = `
+                    <div class="carrito-item-info">
+                        <strong>${item.nombre}</strong><br>
+                        <small>$ ${item.precio_unitario.toLocaleString('es-AR')} c/u</small>
+                    </div>
+                    <input type="number" class="carrito-item-cant" value="${item.cantidad}" min="1" max="${item.stock_max}" onchange="cambiarCantidad(${item.id_producto}, this.value)">
+                    <div style="font-weight:bold; min-width:80px; text-align:right;">$ ${subtotal.toLocaleString('es-AR')}</div>
+                    <button class="btn-remove" style="margin-left:8px;" onclick="quitarDelCarrito(${item.id_producto})">✕</button>
+                `;
+                contenedor.appendChild(div);
+            });
+
+            document.getElementById("total-monto").innerText = `$ ${total.toLocaleString('es-AR')}`;
+        }
+
+        // 5. Procesar Venta
+        async function procesarVenta() {
+            const idCliente = document.getElementById("select-cliente").value;
+            const idVendedor = document.getElementById("select-vendedor").value;
+            const observaciones = document.getElementById("observaciones").value.trim();
+
+            if (!idCliente) { mostrarAlerta("Debes seleccionar un cliente.", "error"); return; }
+            if (!idVendedor) { mostrarAlerta("Debes seleccionar un vendedor.", "error"); return; }
+            if (carrito.length === 0) { mostrarAlerta("El carrito de compras está vacío.", "error"); return; }
+
+            const payload = {
+                id_cliente: parseInt(idCliente),
+                id_vendedor: parseInt(idVendedor),
+                observaciones: observaciones || null,
+                detalles: carrito.map(i => ({
+                    id_producto: i.id_producto,
+                    cantidad: i.cantidad,
+                    precio_unitario: i.precio_unitario
+                }))
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/ventas`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const datos = await res.json();
+
+                if (res.ok) {
+                    mostrarAlerta(`¡Venta #${datos.id_venta} registrada con éxito por $${datos.total}!`, "exito");
+                    carrito = [];
+                    actualizarCarritoUI();
+                    document.getElementById("observaciones").value = "";
+                    cargarProductos();
+                } else {
+                    mostrarAlerta(datos.error || "Ocurrió un error al procesar la venta.", "error");
+                }
+            } catch (err) {
+                mostrarAlerta("Error al conectar con la API de ventas.", "error");
+            }
+        }
+
+        function mostrarAlerta(mensaje, tipo) {
+            const alertDiv = document.getElementById("alert-msg");
+            alertDiv.innerText = mensaje;
+            alertDiv.className = "alert " + (tipo === "exito" ? "alert-success" : "alert-error");
+            alertDiv.style.display = "block";
+            setTimeout(() => { alertDiv.style.display = "none"; }, 4000);
+        }
+    </script>
+</body>
+</html>
+
